@@ -20,21 +20,25 @@ MKRIoTCarrier carrier;
 float temperature;
 float humidity;
 
+// Temperature thresholds
+float minTempThreshold = 20.0;
+float maxTempThreshold = 22.0;
+
 void setup() {
   // Initialize the Arduino MKR IoT Carrier
   carrier.begin();
-
+  carrier.leds.clear();
+  carrier.leds.show();
   // Initialize the serial communication at 9600 baud rate
   Serial.begin(9600);
 }
 
 void loop() {
-
-  // Read temperature and humidity from the environmental sensor
+  // Read temperature and humidity
   temperature = carrier.Env.readTemperature() - 6.43;
   humidity = carrier.Env.readHumidity();
 
-  // Print the temperature and humidity readings to the serial monitor
+  // Print data to the serial monitor
   Serial.print("Temperature: ");
   Serial.print(temperature);
   Serial.println(" C");
@@ -52,4 +56,20 @@ void loop() {
   carrier.display.println(temperature);
   carrier.display.print("Humidity: ");
   carrier.display.println(humidity);
+
+  if (temperature < minTempThreshold) {
+    // temp below min threshold, switch on the blue LED
+    carrier.leds.fill(carrier.leds.Color(0, 73, 255));
+  } else if (temperature > maxTempThreshold) {
+    // temp above max threshold, switch on the red LED
+    carrier.leds.fill(carrier.leds.Color(255, 0, 0));
+  } else {
+    // temp in between thresholds, switch off leds
+    carrier.leds.clear();
+  }
+
+  // Update the state of the LEDs
+  carrier.leds.show();
+
+  delay(1000);
 }
