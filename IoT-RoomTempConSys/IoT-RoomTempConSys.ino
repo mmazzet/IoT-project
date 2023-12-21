@@ -29,7 +29,7 @@ void setup() {
 }
 
 void loop() {
-   
+
   // Read temperature and humidity from the environmental sensor
   temperature = carrier.Env.readTemperature() - 6.43;
   humidity = carrier.Env.readHumidity();
@@ -43,13 +43,13 @@ void loop() {
   Serial.print(humidity);
   Serial.println(" %");
 
-// Display the temperature and humidity on the center of the screen
-carrier.display.fillScreen(0); // Clear the screen
-carrier.display.setCursor(50, 100);
-carrier.display.setTextSize(2);
-carrier.display.setTextColor(0xFFE0); 
-carrier.display.print("Temp: ");
-carrier.display.println(temperature);
-carrier.display.print("Humidity: ");
-carrier.display.println(humidity);
+  // Display the temperature and humidity on the center of the screen
+  carrier.display.fillScreen(0);  // Clear the screen
+  carrier.display.setCursor(50, 100);
+  carrier.display.setTextSize(2);
+  carrier.display.setTextColor(0xFFE0);
+  carrier.display.print("Temp: ");
+  carrier.display.println(temperature);
+  carrier.display.print("Humidity: ");
+  carrier.display.println(humidity);
 }
