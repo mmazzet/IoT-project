@@ -20,9 +20,12 @@ MKRIoTCarrier carrier;
 float temperature;
 float humidity;
 
-// Temperature thresholds
-float minTempThreshold = 20.0;
-float maxTempThreshold = 22.0;
+// Simulated temp for testing
+//float simulatedTemperature = 23.0;
+
+// Temperature thresholds with hysteresis
+float minTurnOnThreshold = 22.5;   // Temperature to turn on the LED
+float minTurnOffThreshold = 22.0;  // Temperature to turn off the LED
 
 void setup() {
   // Initialize the Arduino MKR IoT Carrier
@@ -34,7 +37,10 @@ void setup() {
 }
 
 void loop() {
-  // Read temperature and humidity
+  // For simulated temp only
+  // temperature = simulatedTemperature;
+
+
   temperature = carrier.Env.readTemperature() - 6.43;
   humidity = carrier.Env.readHumidity();
 
@@ -57,15 +63,13 @@ void loop() {
   carrier.display.print("Humidity: ");
   carrier.display.println(humidity);
 
-  if (temperature < minTempThreshold) {
-    // temp below min threshold, switch on the blue LED
-    carrier.leds.fill(carrier.leds.Color(0, 73, 255));
-  } else if (temperature > maxTempThreshold) {
-    // temp above max threshold, switch on the red LED
-    carrier.leds.fill(carrier.leds.Color(255, 0, 0));
-  } else {
-    // temp in between thresholds, switch off leds
+  // Check temperature against hysteresis thresholds
+  if (temperature < minTurnOffThreshold) {
+    // temp below turn-off threshold, switch off the LED
     carrier.leds.clear();
+  } else if (temperature > minTurnOnThreshold) {
+    // temp above turn-on threshold, switch on the blue LED
+    carrier.leds.fill(carrier.leds.Color(0, 73, 255));
   }
 
   // Update the state of the LEDs
