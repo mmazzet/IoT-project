@@ -6,25 +6,27 @@
 #include "secret.h"
 
 unsigned long myChannelNumber = SECRET_CH_ID;
-const char * myWriteAPIKey = SECRET_WRITE_APIKEY;
+const char* myWriteAPIKey = SECRET_WRITE_APIKEY;
 MKRIoTCarrier carrier;
 char ssid[] = SSID;
 char pass[] = PASSWORD;
 
 int status = WL_IDLE_STATUS;
-const char* mqttServer = "mqtt3.thingspeak.com"; 
-const int mqttPort = 1883; 
+const char* mqttServer = "mqtt3.thingspeak.com";
+const int mqttPort = 1883;
 
 WiFiClient wifiClient;
 
 float lowerThreshold = 18.5; // lower temperature threshold
 float upperThreshold = 19.0; // upper temperature threshold
 
+bool plugState = false; // false is OFF, true is ON
+
 void setup() {
   // Initialize serial and wait for port to open:
   Serial.begin(9600);
   while (!Serial) {
-    // Wait for serial port to connect. Needed for the native USB port only
+    // Wait for the serial port to connect. Needed for the native USB port only
     ;
   }
   setupWiFi();
@@ -35,23 +37,25 @@ void setup() {
 void loop() {
   // Read the sensor values
   float temperature = carrier.Env.readTemperature() - 5;
-  
+
   // Check if temperature is below the lower threshold
-  if (temperature < lowerThreshold) {
+  if (temperature < lowerThreshold && !plugState) {
     switchPlugOn();
+    plugState = true; // Update the state
   }
-  
+
   // Check if temperature is above the upper threshold
-  if (temperature > upperThreshold) {
+  if (temperature > upperThreshold && plugState) {
     switchPlugOff();
+    plugState = false; // Update the state
   }
 
   // Set the fields with the values
   ThingSpeak.setField(1, temperature);
-  
+
   // Update ThingSpeak channel
   int x = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
-  
+
   if (x == 200) {
     Serial.println("Channel update successful.");
     Serial.print("Room Temp: ");
@@ -59,8 +63,8 @@ void loop() {
   } else {
     Serial.println("Problem updating channel. HTTP error code " + String(x));
   }
-  
-  delay(INTERVAL);  // Delay for interval
+
+  delay(INTERVAL); // Delay for interval
 }
 
 void setupWiFi() {
@@ -73,25 +77,25 @@ void setupWiFi() {
 
   // Attempt to connect to WiFi network:
   while (status != WL_CONNECTED) {
-    Serial.print("Attempting to connect to SSID");
-    // Connect to WPA/WPA2 network:
+    Serial.println("Attempting to connect to SSID");
+    // Connect to network:
     status = WiFi.begin(ssid, pass);
 
     // Wait 10 seconds for connection:
     delay(INTERVAL);
   }
-  
+
   // You're connected now, so print out the data:
-  Serial.println("You're connected to the network");
+  Serial.println("Connected to the network");
 }
 
 void switchPlugOn() {
   // Send request to ThingHTTP to switch on the plug
   Serial.println("Switching on the plug...");
-  
+
   // Define the ThingHTTP endpoint for switching on the plug
   String endpoint = "/apps/thinghttp/send_request?api_key=" LOW_SWITCH_ON;
-  
+
   // Make the HTTP request
   makeHttpRequest(endpoint);
 }
@@ -99,26 +103,26 @@ void switchPlugOn() {
 void switchPlugOff() {
   // Send request to ThingHTTP to switch off the plug
   Serial.println("Switching off the plug...");
-  
+
   // Define the ThingHTTP endpoint for switching off the plug
   String endpoint = "/apps/thinghttp/send_request?api_key=" HIGH_SWITCH_OFF;
-  
+
   // Make the HTTP request
   makeHttpRequest(endpoint);
 }
 
 void makeHttpRequest(String endpoint) {
   // Make an HTTP request to the specified endpoint
-  
+
   // Connect to the ThingHTTP server
   if (wifiClient.connect("api.thingspeak.com", 80)) {
     // Make a GET request to the specified endpoint
     wifiClient.print("GET " + endpoint + " HTTP/1.1\r\n" +
                      "Host: api.thingspeak.com\r\n" +
                      "Connection: close\r\n\r\n");
-                     
+
     // Wait for the server to respond
-    delay(500);
+    // delay(500);
 
     // Read and print the response
     while (wifiClient.available()) {
