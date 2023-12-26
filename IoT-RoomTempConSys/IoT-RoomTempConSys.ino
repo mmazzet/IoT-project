@@ -1,76 +1,69 @@
-
-#define BLYNK_TEMPLATE_ID "TMPL4s3OwgJjV"
-#define BLYNK_TEMPLATE_NAME "RoomTempConSys"
 #include <SPI.h>
 #include <WiFi.h>
-#include <BlynkSimpleWifi.h>
+#include <WiFiNINA.h>
 #include <Arduino_MKRIoTCarrier.h>
+#include <ThingSpeak.h>
 #include "secret.h"
 
-
+unsigned long myChannelNumber = SECRET_CH_ID;
+const char * myWriteAPIKey = SECRET_WRITE_APIKEY;
+MKRIoTCarrier carrier;
 char ssid[] = SSID;
 char pass[] = PASSWORD;
-char blynk_auth_token[] = BLYNK_AUTH_TOKEN;
 
-BlynkTimer timer;
-MKRIoTCarrier carrier;
+int status = WL_IDLE_STATUS;
+const char* mqttServer = "mqtt3.thingspeak.com"; 
+const int mqttPort = 1883; 
 
-float temperature;  // Declare the temperature variable
-float humidity;
-float minTurnOnThreshold = 22.5;  // Temperature to turn on the LED
-float minTurnOffThreshold = 22.0;
-
-int blynkButtonState = 0;
-
-BLYNK_WRITE(V0) {
-  blynkButtonState = param.asInt();
-
-  // Clear the screen
-  carrier.display.fillScreen(0);
-  carrier.display.setCursor(50, 150);
-  carrier.display.setTextSize(3);
-
-  if (blynkButtonState) {
-    carrier.display.setCursor(50, 100);
-    carrier.display.setTextColor(0x07E0);  // green
-    carrier.display.print("Button ON");
-  } else {
-    carrier.display.setTextColor(0xF800);  // red
-    carrier.display.print("Button OFF");
-  }
-}
-
-void writeTemperature() {
-  // Don't send more than 10 values per second.
-  float temperature = carrier.Env.readTemperature() - 6.5;
-  Blynk.virtualWrite(V1, temperature);
-  // Print temperature to the serial monitor
-  Serial.print("Temperature: ");
-  Serial.println(temperature);
-}
+WiFiClient wifiClient;
 
 void setup() {
+  //Initialize serial and wait for port to open:
   Serial.begin(9600);
-  Blynk.begin(blynk_auth_token, ssid, pass);
-  timer.setInterval(2000L, writeTemperature);
-  carrier.noCase();
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB port only
+  }
+  setupWiFi();
+  ThingSpeak.begin(wifiClient);
   carrier.begin();
-  carrier.leds.clear();
-  carrier.leds.show();
 }
 
 void loop() {
-  // temperature = carrier.Env.readTemperature() - 6.5;
 
-  if (temperature < minTurnOffThreshold) {
-    carrier.leds.clear();
-  } else if (temperature > minTurnOnThreshold) {
-    carrier.leds.fill(carrier.leds.Color(0, 73, 255));
+  // read the sensor values
+  float temperature = carrier.Env.readTemperature()-5;
+  float humidity = carrier.Env.readHumidity();
+    // set the fields with the values
+  ThingSpeak.setField(1, temperature);
+  int x = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
+   if(x == 200){
+    Serial.println("Channel update successful.");
+    Serial.print("Room Temp: ");
+    Serial.println(temperature);
+  }
+  else{
+    Serial.println("Problem updating channel. HTTP error code " + String(x));
+  }
+  delay(INTERVAL);  // Delay for interval
+}
+
+void setupWiFi() {
+ // check for the WiFi module:
+  if (WiFi.status() == WL_NO_MODULE) {
+    Serial.println("Communication with WiFi module failed!");
+    // don't continue
+    while (true);
   }
 
-  carrier.leds.show();
-  // delay(1000);
+  // attempt to connect to WiFi network:
+  while (status != WL_CONNECTED) {
+    Serial.print("Attempting to connect toSSID");
+    // Connect to WPA/WPA2 network:
+    status = WiFi.begin(ssid, pass);
 
-  Blynk.run();
-  timer.run();
+    // wait 10 seconds for connection:
+    delay(INTERVAL);
+  }
+  // you're connected now, so print out the data:
+  Serial.println("You're connected to the network");
 }
