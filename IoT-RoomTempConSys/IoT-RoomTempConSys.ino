@@ -17,11 +17,8 @@ const int mqttPort = 1883;
 
 WiFiClient wifiClient;
 
-// Hysteresis thresholds
-float lowerThreshold = 20.0; // Set your lower temperature threshold
-float upperThreshold = 25.0; // Set your upper temperature threshold
-
-
+float lowerThreshold = 18.5; // lower temperature threshold
+float upperThreshold = 19.0; // upper temperature threshold
 
 void setup() {
   // Initialize serial and wait for port to open:
@@ -93,7 +90,7 @@ void switchPlugOn() {
   Serial.println("Switching on the plug...");
   
   // Define the ThingHTTP endpoint for switching on the plug
-  String endpoint = "/apps/thinghttp/send_request?api_key=MYKEY1";
+  String endpoint = "/apps/thinghttp/send_request?api_key=" LOW_SWITCH_ON;
   
   // Make the HTTP request
   makeHttpRequest(endpoint);
@@ -104,7 +101,7 @@ void switchPlugOff() {
   Serial.println("Switching off the plug...");
   
   // Define the ThingHTTP endpoint for switching off the plug
-  String endpoint = "/apps/thinghttp/send_request?api_key=MYKEY";
+  String endpoint = "/apps/thinghttp/send_request?api_key=" HIGH_SWITCH_OFF;
   
   // Make the HTTP request
   makeHttpRequest(endpoint);
