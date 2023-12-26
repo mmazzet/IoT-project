@@ -38,6 +38,11 @@ void loop() {
   // Read the sensor values
   float temperature = carrier.Env.readTemperature() - 5;
 
+  Serial.print("Temperature: ");
+  Serial.println(temperature);
+  Serial.print("Plug State: ");
+  Serial.println(plugState ? "ON" : "OFF");
+
   // Check if temperature is below the lower threshold
   if (temperature < lowerThreshold && !plugState) {
     switchPlugOn();
