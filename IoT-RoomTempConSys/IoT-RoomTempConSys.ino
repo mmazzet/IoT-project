@@ -5,22 +5,28 @@
 #include <ThingSpeak.h>
 #include "secret.h"
 
-unsigned long myChannelNumber = SECRET_CH_ID;
-const char* myWriteAPIKey = SECRET_WRITE_APIKEY;
-MKRIoTCarrier carrier;
+
+// Wifi and ThingSpeak log in details
 char ssid[] = SSID;
 char pass[] = PASSWORD;
+unsigned long myChannelNumber = SECRET_CH_ID;
+const char* myWriteAPIKey = SECRET_WRITE_APIKEY;
 
-int status = WL_IDLE_STATUS;
+// ThingSpeak mqtt details
 const char* mqttServer = "mqtt3.thingspeak.com";
 const int mqttPort = 1883;
 
+int status = WL_IDLE_STATUS;
+
+MKRIoTCarrier carrier;
 WiFiClient wifiClient;
 
-float lowerThreshold = 18.5; // lower temperature threshold
-float upperThreshold = 19.0; // upper temperature threshold
+// Temperature thresholds for hysteresis
+float lowerThreshold = 22;    // lower temperature threshold
+float upperThreshold = 22.5;  // upper temperature threshold
 
-bool plugState = false; // false is OFF, true is ON
+// Plug state
+bool plugState = false;  // false is OFF, true is ON
 
 void setup() {
   // Initialize serial and wait for port to open:
@@ -31,12 +37,22 @@ void setup() {
   }
   setupWiFi();
   ThingSpeak.begin(wifiClient);
+  carrier.noCase();
   carrier.begin();
 }
 
 void loop() {
   // Read the sensor values
-  float temperature = carrier.Env.readTemperature() - 5;
+  float temperature = carrier.Env.readTemperature() - 2;
+
+  // Display temperature on the MKR IoT Carrier display
+  carrier.display.fillScreen(0);
+  carrier.display.setTextSize(2);
+  carrier.display.setCursor(50, 100);
+  carrier.display.setTextColor(0xF81F);
+  carrier.display.print("Temp: ");
+  carrier.display.print(temperature);
+  carrier.display.println(" C");
 
   Serial.print("Temperature: ");
   Serial.println(temperature);
@@ -46,13 +62,13 @@ void loop() {
   // Check if temperature is below the lower threshold
   if (temperature < lowerThreshold && !plugState) {
     switchPlugOn();
-    plugState = true; // Update the state
+    plugState = true;  // Update the state
   }
 
   // Check if temperature is above the upper threshold
   if (temperature > upperThreshold && plugState) {
     switchPlugOff();
-    plugState = false; // Update the state
+    plugState = false;  // Update the state
   }
 
   // Set the fields with the values
@@ -68,8 +84,7 @@ void loop() {
   } else {
     Serial.println("Problem updating channel. HTTP error code " + String(x));
   }
-
-  delay(INTERVAL); // Delay for interval
+  delay(INTERVAL);  // Delay for interval
 }
 
 void setupWiFi() {
@@ -77,7 +92,8 @@ void setupWiFi() {
   if (WiFi.status() == WL_NO_MODULE) {
     Serial.println("Communication with WiFi module failed!");
     // Don't continue
-    while (true);
+    while (true)
+      ;
   }
 
   // Attempt to connect to WiFi network:
@@ -122,9 +138,7 @@ void makeHttpRequest(String endpoint) {
   // Connect to the ThingHTTP server
   if (wifiClient.connect("api.thingspeak.com", 80)) {
     // Make a GET request to the specified endpoint
-    wifiClient.print("GET " + endpoint + " HTTP/1.1\r\n" +
-                     "Host: api.thingspeak.com\r\n" +
-                     "Connection: close\r\n\r\n");
+    wifiClient.print("GET " + endpoint + " HTTP/1.1\r\n" + "Host: api.thingspeak.com\r\n" + "Connection: close\r\n\r\n");
 
     // Wait for the server to respond
     // delay(500);
