@@ -1,14 +1,17 @@
 #include <SPI.h>
 #include <WiFi.h>
 #include <WiFiNINA.h>
+#include "Firebase_Arduino_WiFiNINA.h"
 #include <Arduino_MKRIoTCarrier.h>
 #include <ThingSpeak.h>
 #include "secret.h"
 
 
-// Wifi and ThingSpeak log in details
+// Wifi, Firebase, ThingSpeak log in details
 char ssid[] = SSID;
 char pass[] = PASSWORD;
+char dbUrl[] = DATABASE_URL;
+char dbSecret[] = DATABASE_SECRET;
 unsigned long myChannelNumber = SECRET_CH_ID;
 const char* myWriteAPIKey = SECRET_WRITE_APIKEY;
 
@@ -17,6 +20,12 @@ const char* mqttServer = "mqtt3.thingspeak.com";
 const int mqttPort = 1883;
 
 int status = WL_IDLE_STATUS;
+
+//Define Firebase data object
+FirebaseData fbdo;
+const long interval = 5000;
+unsigned long previousMillis = millis();
+unsigned long currentMillis = millis();
 
 MKRIoTCarrier carrier;
 WiFiClient wifiClient;
@@ -37,13 +46,16 @@ void setup() {
   }
   setupWiFi();
   ThingSpeak.begin(wifiClient);
+
+  Firebase.begin(dbUrl, dbSecret, ssid, pass);
+  Firebase.reconnectWiFi(true);
   carrier.noCase();
   carrier.begin();
 }
 
 void loop() {
   // Read the sensor values
-  float temperature = carrier.Env.readTemperature() - 2;
+  float temperature = carrier.Env.readTemperature();
 
   // Display temperature on the MKR IoT Carrier display
   carrier.display.fillScreen(0);
@@ -54,8 +66,6 @@ void loop() {
   carrier.display.print(temperature);
   carrier.display.println(" C");
 
-  Serial.print("Temperature: ");
-  Serial.println(temperature);
   Serial.print("Plug State: ");
   Serial.println(plugState ? "ON" : "OFF");
 
@@ -85,6 +95,16 @@ void loop() {
     Serial.println("Problem updating channel. HTTP error code " + String(x));
   }
   delay(INTERVAL);  // Delay for interval
+
+  currentMillis = millis();
+
+  if (currentMillis - previousMillis >= interval) {
+    // save the last time a message was sent
+    previousMillis = currentMillis;
+    Serial.println("Sending message: ");
+    sendMessage(temperature);
+    Serial.println();
+  }
 }
 
 void setupWiFi() {
@@ -140,9 +160,6 @@ void makeHttpRequest(String endpoint) {
     // Make a GET request to the specified endpoint
     wifiClient.print("GET " + endpoint + " HTTP/1.1\r\n" + "Host: api.thingspeak.com\r\n" + "Connection: close\r\n\r\n");
 
-    // Wait for the server to respond
-    // delay(500);
-
     // Read and print the response
     while (wifiClient.available()) {
       Serial.write(wifiClient.read());
@@ -153,4 +170,25 @@ void makeHttpRequest(String endpoint) {
   } else {
     Serial.println("Unable to connect to ThingHTTP server");
   }
+}
+
+void sendMessage(float temperature) {
+  // send message, the Print interface can be used to set the message contents
+  String path = "/events";
+  String jsonStr;
+
+  Serial.println("Pushing json... ");
+
+  jsonStr = "{\"event\":\"push\",\"temperature\":" + String(temperature) + "}";
+  Serial.println(jsonStr);
+
+  // Push data to Firebase
+  if (Firebase.pushJSON(fbdo, path + "/temperature", jsonStr)) {
+    Serial.println("Path: " + fbdo.dataPath());
+  } else {
+    Serial.println("Error: " + fbdo.errorReason());
+  }
+
+  // Clear Firebase data object
+  fbdo.clear();
 }
