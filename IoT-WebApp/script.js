@@ -1,13 +1,15 @@
+require('dotenv').config();
+console.log(process.env.API_KEY);
+
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBb-ncbFYFbOVZgShrcFD95S5foYF100MU",
-  authDomain: "iot-roomtempconsys.firebaseapp.com",
-  databaseURL:
-    "https://iot-roomtempconsys-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "iot-roomtempconsys",
-  storageBucket: "iot-roomtempconsys.appspot.com",
-  messagingSenderId: "877752628868",
-  appId: "1:877752628868:web:46cb4add72c645b53f34d1",
+  apiKey: process.env.API_KEY,
+  authDomain: process.env.AUTH_DOMAIN,
+  databaseURL: process.env.DATABASE_URL,
+  projectId: process.env.PROJECT_ID,
+  storageBucket: process.env.STORAGE_BUCKET,
+  messagingSenderId: process.env.MESSAGING_SENDERID,
+  appId: process.env.APP_ID
 };
 
 firebase.initializeApp(firebaseConfig);
