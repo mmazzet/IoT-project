@@ -1,15 +1,12 @@
-require('dotenv').config();
-console.log(process.env.API_KEY);
-
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: process.env.API_KEY,
-  authDomain: process.env.AUTH_DOMAIN,
-  databaseURL: process.env.DATABASE_URL,
-  projectId: process.env.PROJECT_ID,
-  storageBucket: process.env.STORAGE_BUCKET,
-  messagingSenderId: process.env.MESSAGING_SENDERID,
-  appId: process.env.APP_ID
+  apiKey: "xx",
+  authDomain: "xx",
+  databaseURL: "xx",
+  projectId: "xx",
+  storageBucket: "xx",
+  messagingSenderId: "xx",
+  appId: "xx"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -25,7 +22,6 @@ tempRef.limitToLast(1).on("value", function (reading) {
   reading.forEach(function (readingTemp) {
     const event = readingTemp.val()["event"];
     const temp = readingTemp.val()["temperature"];
-
     document.getElementById(
       "events"
     ).innerText += `Event: ${event}, Temp: ${temp}  \n`;
