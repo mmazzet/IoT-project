@@ -15,10 +15,6 @@ char dbSecret[] = DATABASE_SECRET;
 unsigned long myChannelNumber = SECRET_CH_ID;
 const char* myWriteAPIKey = SECRET_WRITE_APIKEY;
 
-// ThingSpeak mqtt details
-const char* mqttServer = "mqtt3.thingspeak.com";
-const int mqttPort = 1883;
-
 int status = WL_IDLE_STATUS;
 
 //Define Firebase data object
