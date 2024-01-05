@@ -24,6 +24,6 @@ tempRef.limitToLast(1).on("value", function (reading) {
     const temp = readingTemp.val()["temperature"];
     document.getElementById(
       "events"
-    ).innerText += `Event: ${event}, Temp: ${temp}  \n`;
+    ).innerText += `Event: ${event}, Temp: ${temp}\n`;
   });
 });
